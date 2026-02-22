@@ -24,7 +24,7 @@ while True:
         print("Failed to read camera frame", flush=True)
         break
 
-    # YOLO Object Detection (STEP 2)
+    # YOLO Object Detection
     with torch.no_grad():        # prevents memory crash
         results = model(frame)
         results.render()
