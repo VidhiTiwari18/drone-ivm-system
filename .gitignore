@@ -10,3 +10,4 @@ runs/
 .cache/
 *.pt
 yolov5/
+*.db

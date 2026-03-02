@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Inventory Dashboard</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+
+<h2>Inventory Dashboard</h2>
+
+<table id="inventoryTable">
+    <tr>
+        <th>ID</th>
+        <th>Item ID</th>
+        <th>Timestamp</th>
+    </tr>
+</table>
+
+<script>
+fetch("/inventory")
+    .then(response => response.json())
+    .then(data => {
+        const table = document.getElementById("inventoryTable");
+
+        data.forEach(row => {
+            const tr = document.createElement("tr");
+            tr.innerHTML = `
+                <td>${row[0]}</td>
+                <td>${row[1]}</td>
+                <td>${row[2]}</td>
+            `;
+            table.appendChild(tr);
+        });
+    });
+</script>
+
+</body>
+</html>
