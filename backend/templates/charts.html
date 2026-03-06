@@ -3,9 +3,11 @@
 
 <head>
 
-<title>Charts</title>
+<title>Inventory Analytics</title>
 
 <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 </head>
 
@@ -23,7 +25,6 @@
 
 </div>
 
-
 <div class="main-content">
 
 <h1>Inventory Analytics</h1>
@@ -33,6 +34,46 @@
 </div>
 
 </div>
+
+
+<script>
+
+fetch("/inventory")
+
+.then(response => response.json())
+
+.then(data => {
+
+    const labels = data.map(row => row[1])
+    const values = data.map((row,index) => index + 1)
+
+    const ctx = document.getElementById("inventoryChart")
+
+    new Chart(ctx, {
+
+        type: "bar",
+
+        data: {
+
+            labels: labels,
+
+            datasets: [{
+                label: "Items Scanned",
+                data: values,
+                backgroundColor: "#2a5298"
+            }]
+
+        },
+
+        options: {
+            responsive: true
+        }
+
+    })
+
+})
+
+</script>
 
 </body>
 

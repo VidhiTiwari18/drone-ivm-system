@@ -1,68 +1,56 @@
-import warnings
-warnings.filterwarnings("ignore")   # suppress YOLO / torch warnings
-
 import cv2
-import torch
-# Load YOLOv5 model
-print("Loading YOLOv5 model...")
-model = torch.hub.load('ultralytics/yolov5', 'yolov5s')
+import requests
+from pyzbar.pyzbar import decode
 
-# Initialize QR Code Detector
-qr_detector = cv2.QRCodeDetector()
-
-# Open Camera
+# Open camera
 cap = cv2.VideoCapture(0)
 
-print("Camera started")
-print("Show a CLEAR QR code to the camera")
-print("Press 'q' to quit")
+print("Scanner started...")
 
-# Main Loop
 while True:
+
     ret, frame = cap.read()
+
     if not ret:
-        print("Failed to read camera frame", flush=True)
         break
 
-    # YOLO Object Detection
-    with torch.no_grad():        # prevents memory crash
-        results = model(frame)
-        results.render()
+    # Detect barcode
+    barcodes = decode(frame)
 
-    # QR Detection
-    gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-    data, bbox, _ = qr_detector.detectAndDecode(gray)
+    for barcode in barcodes:
 
-    # Draw QR bounding box
-    if bbox is not None:
-        bbox = bbox.astype(int)
-        for i in range(len(bbox[0])):
-            pt1 = tuple(bbox[0][i])
-            pt2 = tuple(bbox[0][(i + 1) % len(bbox[0])])
-            cv2.line(frame, pt1, pt2, (0, 255, 0), 2)
+        # Convert barcode bytes to string
+        barcode_data = barcode.data.decode("utf-8")
 
-    # Print QR data to terminal
-    if data:
-        print("Scanned QR:", data, flush=True)
+        print("Scanned:", barcode_data)
+
+        # Send data to Flask backend
+        try:
+            requests.post(
+                "http://127.0.0.1:5000/add_item",
+                json={"item_id": barcode_data}
+            )
+        except:
+            print("Backend not running")
+
+        # Draw rectangle around barcode
+        x, y, w, h = barcode.rect
+        cv2.rectangle(frame, (x,y), (x+w,y+h), (0,255,0), 2)
 
         cv2.putText(
             frame,
-            data,
-            (50, 50),
+            barcode_data,
+            (x, y-10),
             cv2.FONT_HERSHEY_SIMPLEX,
-            1,
-            (0, 255, 0),
+            0.8,
+            (0,255,0),
             2
         )
 
-    # Display Output
-    cv2.imshow("YOLO + QR Inventory System", frame)
+    cv2.imshow("Barcode Scanner", frame)
 
-    # Exit on 'q'
     if cv2.waitKey(1) & 0xFF == ord('q'):
         break
 
-# Cleanup
 cap.release()
 cv2.destroyAllWindows()
-print("Program stopped", flush=True)

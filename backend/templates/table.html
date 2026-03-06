@@ -3,7 +3,7 @@
 
 <head>
 
-<title>Inventory</title>
+<title>Inventory Table</title>
 
 <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 
@@ -23,12 +23,13 @@
 
 </div>
 
-
 <div class="main-content">
 
 <h1>Inventory Table</h1>
 
 <table class="data-table">
+
+<thead>
 
 <tr>
 <th>ID</th>
@@ -36,21 +37,56 @@
 <th>Timestamp</th>
 </tr>
 
-{% for item in items %}
+</thead>
 
-<tr>
-<td>{{ item[0] }}</td>
-<td>{{ item[1] }}</td>
-<td>{{ item[2] }}</td>
-</tr>
+<tbody id="inventory-table">
 
-{% endfor %}
+</tbody>
 
 </table>
 
 </div>
 
 </div>
+
+
+<script>
+
+function loadInventory(){
+
+fetch("/inventory")
+
+.then(response => response.json())
+
+.then(data => {
+
+    const table = document.getElementById("inventory-table")
+
+    table.innerHTML = ""
+
+    data.forEach(row => {
+
+        const tr = document.createElement("tr")
+
+        tr.innerHTML = `
+        <td>${row[0]}</td>
+        <td>${row[1]}</td>
+        <td>${row[2]}</td>
+        `
+
+        table.appendChild(tr)
+
+    })
+
+})
+
+}
+
+loadInventory()
+
+setInterval(loadInventory, 5000)
+
+</script>
 
 </body>
 
