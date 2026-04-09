@@ -1,15 +1,215 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Login</title>
-    <link rel="stylesheet" href="{{ url_for('static',filename='style.css')}}">
-</head>
-<body class="login-bg">
+    <title>Vidhi Logistics</title>
 
-<div class="login-box">
-    <h2>Welcome to<br>Vidhi's Logistics Enterprise</h2>
-    <button onclick="location.href='/dashboard'">Enter Dashboard</button>
+    <style>
+        body {
+            margin: 0;
+            height: 100vh;
+            font-family: 'Segoe UI', sans-serif;
+            background: url("{{ url_for('static', filename='bg.jpg') }}") no-repeat center/cover;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        /* soft overlay */
+        body::before {
+            content: "";
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.35);
+        }
+
+        .box {
+            position: relative;
+            z-index: 2;
+            width: 320px;
+            padding: 40px;
+            border-radius: 12px;
+            backdrop-filter: blur(12px);
+            background: rgba(255,255,255,0.15);
+        }
+
+        h2 {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+            letter-spacing: 1px;
+        }
+
+        .field {
+            position: relative;
+            margin-bottom: 28px;
+        }
+
+        .field input {
+            width: 100%;
+            padding: 14px 12px;
+            border: none;
+            outline: none;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+
+        .field label {
+            position: absolute;
+            left: 12px;
+            top: 14px;
+            color: #888;
+            font-size: 14px;
+            pointer-events: none;
+            transition: 0.25s ease;
+        }
+
+        .field input:focus + label,
+        .field input:not(:placeholder-shown) + label {
+            top: -8px;
+            font-size: 11px;
+            color: #2a5298;
+            left: 10px;
+            background: rgba(255,255,255,0.8);
+            padding:0 5px;
+            border radius:4px;
+        }
+
+        /* password toggle */
+        .toggle {
+            position: absolute;
+            right: 10px;
+            top: 12px;
+            cursor: pointer;
+            font-size: 12px;
+            color: #333;
+        }
+
+        button {
+            width: 100%;
+            padding: 12px;
+            border: none;
+            background: #2a5298;
+            color: white;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: 0.25s;
+        }
+
+        button:hover {
+            background: #1e3c72;
+        }
+
+        /* error */
+        .error {
+            color: #ff6b6b;
+            font-size: 12px;
+            margin-bottom: 10px;
+        }
+
+        /* SUCCESS OVERLAY */
+        .overlay {
+            position: fixed;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.7);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            visibility: hidden;
+        }
+
+        .overlay.active {
+            visibility: visible;
+        }
+
+        .success-box {
+            background: white;
+            padding: 30px 50px;
+            border-radius: 10px;
+            text-align: center;
+            animation: pop 0.5s ease;
+        }
+
+        .success-box h3 {
+            margin: 0;
+            color: #2a5298;
+        }
+
+        @keyframes pop {
+            from {
+                transform: scale(0.7);
+                opacity: 0;
+            }
+            to {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+
+    </style>
+</head>
+
+<body>
+
+<!-- LOGIN -->
+<form class="box" method="POST" action="/login" onsubmit="return handleLogin(event)">
+
+    <h2>Vidhi Logistics</h2>
+
+    {% if error %}
+        <p class="error">{{ error }}</p>
+    {% endif %}
+
+    <div class="field">
+        <input type="text" name="username" placeholder="" required>
+        <label>Username</label>
+    </div>
+
+    <div class="field">
+        <input type="password" id="password" name="password" placeholder="" required>
+        <label>Password</label>
+        <span class="toggle" onclick="togglePass()">show</span>
+    </div>
+
+    <button type="submit">Access System</button>
+
+</form>
+
+<!-- SUCCESS SCREEN -->
+<div class="overlay" id="overlay">
+    <div class="success-box">
+        <h3>Access Granted</h3>
+        <p>Welcome to Vidhi Logistic Enterprise</p>
+    </div>
 </div>
+
+<script>
+
+function togglePass(){
+    let p = document.getElementById("password");
+    p.type = p.type === "password" ? "text" : "password";
+}
+
+// smooth login animation
+function handleLogin(e){
+    let u = document.querySelector("input[name='username']").value;
+    let p = document.getElementById("password").value;
+
+    if(u === "admin" && p === "1234"){
+        e.preventDefault();
+
+        document.getElementById("overlay").classList.add("active");
+
+        setTimeout(()=>{
+            e.target.submit();
+        }, 1200);
+
+        return false;
+    }
+}
+
+</script>
 
 </body>
 </html>

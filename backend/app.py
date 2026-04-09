@@ -1,68 +1,109 @@
-from flask import Flask, render_template, jsonify, request
+from flask import Flask, render_template, request, redirect, session, jsonify
 import sqlite3
 from datetime import datetime
+import os
 
 app = Flask(__name__)
+app.secret_key = "secret123"
 
-# Database path
-DB_PATH = "backend/inventory.db"
+# database path
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+DB_PATH = os.path.join(BASE_DIR, "inventory.db")
 
-# Login Page
+
+# login page
 @app.route("/")
 def login():
     return render_template("login.html")
 
-# Dashboard Page
+
+# login check
+@app.route("/login", methods=["POST"])
+def do_login():
+    username = request.form["username"]
+    password = request.form["password"]
+
+    if username == "vidhi logistic" and password == "grant acess":
+        session["user"] = username
+        return redirect("/dashboard")
+    else:
+        return render_template("login.html", error="Invalid username or password")
+
+
+#dashboard
 @app.route("/dashboard")
 def dashboard():
+    if "user" not in session:
+        return redirect("/")
     return render_template("dashboard.html")
 
-# Table Page
+
+# table page
 @app.route("/table")
 def table():
+    if "user" not in session:
+        return redirect("/")
     return render_template("table.html")
 
-# Charts Page
+
+# charts page
 @app.route("/charts")
 def charts():
+    if "user" not in session:
+        return redirect("/")
     return render_template("charts.html")
 
-# API: Get Inventory Data
+
+# logout
+@app.route("/logout")
+def logout():
+    session.pop("user", None)
+    return redirect("/")
+
+
+# inventory api (get data)
 @app.route("/inventory")
-def inventory():
+def get_inventory():
+    try:
+        conn = sqlite3.connect(DB_PATH)
+        cursor = conn.cursor()
 
-    conn = sqlite3.connect(DB_PATH)
-    cursor = conn.cursor()
+        cursor.execute("SELECT * FROM inventory")
+        data = cursor.fetchall()
 
-    cursor.execute("SELECT * FROM inventory")
-    rows = cursor.fetchall()
+        conn.close()
+        return jsonify(data)
 
-    conn.close()
+    except Exception as e:
+        return {"error": str(e)}
 
-    return jsonify(rows)
 
-# API: Add Item (Scanner)
+# add item api (from yolo/scanner)
 @app.route("/add_item", methods=["POST"])
 def add_item():
+    try:
+        data = request.json
+        item_id = data["item_id"]
 
-    data = request.json
-    item_id = data["item_id"]
+        timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
-    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        conn = sqlite3.connect(DB_PATH)
+        cursor = conn.cursor()
 
-    conn = sqlite3.connect(DB_PATH)
-    cursor = conn.cursor()
+        cursor.execute(
+            "INSERT INTO inventory (item_id, timestamp) VALUES (?, ?)",
+            (item_id, timestamp)
+        )
 
-    cursor.execute(
-        "INSERT INTO inventory (item_id, timestamp) VALUES (?, ?)",
-        (item_id, timestamp)
-    )
+        conn.commit()
+        conn.close()
 
-    conn.commit()
-    conn.close()
+        return {"status": "success"}
 
-    return {"status": "success"}
+    except Exception as e:
+        return {"error": str(e)}
 
-# Run Flask App
+
+# run app
 if __name__ == "__main__":
     app.run(debug=True)

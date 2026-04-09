@@ -1,25 +1,305 @@
 <!DOCTYPE html>
 <html>
-
 <head>
-<title>Vidhi Logistics</title>
+    <title>Dashboard</title>
 
-<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+        body {
+            margin: 0;
+            font-family: 'Segoe UI', sans-serif;
+            display: flex;
+            background: #f4f6f9;
+        }
 
+        /* Sidebar */
+        .sidebar {
+            width: 220px;
+            height: 100vh;
+            background: #1e3c72;
+            color: white;
+            position: fixed;
+        }
+
+        .sidebar h2 {
+            text-align: center;
+            padding: 15px 0;
+            font-size: 18px;
+        }
+
+        .sidebar a {
+            display: block;
+            padding: 14px;
+            color: white;
+            text-decoration: none;
+            transition: 0.2s;
+        }
+
+        .sidebar a:hover {
+            background: #2a5298;
+            padding-left: 20px;
+        }
+
+        /* Main */
+        .main {
+            margin-left: 220px;
+            width: 100%;
+        }
+
+        .navbar {
+            background: white;
+            padding: 15px 20px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.08);
+        }
+
+        /* Cards */
+        .cards {
+            display: flex;
+            gap: 20px;
+            padding: 20px;
+        }
+
+        .card {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            width: 220px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+            transition: 0.25s;
+            opacity: 0;
+            transform: translateY(20px);
+        }
+
+        .card.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+        }
+
+        .card h4 {
+            margin-bottom: 8px;
+            color: #555;
+        }
+
+        .card p {
+            font-size: 22px;
+            font-weight: bold;
+            color: #1e3c72;
+        }
+
+        /* Table */
+        .table-section {
+            padding: 20px;
+        }
+
+        .search {
+            padding: 10px;
+            width: 250px;
+            margin-bottom: 10px;
+            border-radius: 6px;
+            border: 1px solid #ccc;
+        }
+
+        table {
+            width: 95%;
+            background: white;
+            border-collapse: collapse;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        th, td {
+            padding: 12px;
+            text-align: center;
+        }
+
+        th {
+            background: #2a5298;
+            color: white;
+        }
+
+        tr:nth-child(even) {
+            background: #f2f2f2;
+        }
+
+    </style>
 </head>
 
-<body class="dashboard-bg">
+<body>
 
-<div class="center-container">
+<!-- Sidebar -->
+<div class="sidebar">
+    <h2>Vidhi Logistics</h2>
+    <a href="/dashboard">Dashboard</a>
+    <a href="/table">Inventory</a>
+    <a href="/charts">Analytics</a>
+    <a href="/logout">Logout</a>
+</div>
 
-<img src="{{ url_for('static', filename='logo.png') }}" class="logo-main">
+<!-- Main -->
+<div class="main">
 
-<button class="dashboard-btn" onclick="location.href='/table'">
-Enter Dashboard
-</button>
+    <div class="navbar">
+        <h3>Dashboard</h3>
+    </div>
+
+    <!-- Cards -->
+    <div class="cards">
+
+        <div class="card" id="card1">
+            <h4>Total Items</h4>
+            <p id="total">0</p>
+        </div>
+
+        <div class="card" id="card2">
+            <h4>Scanned Today</h4>
+            <p id="today">0</p>
+        </div>
+
+    </div>
+
+    <!-- Table -->
+    <div class="table-section">
+
+        <input class="search" type="text" id="search" placeholder="Search Item" onkeyup="searchData()">
+
+        <table>
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Item</th>
+                    <th>Time</th>
+                </tr>
+            </thead>
+
+            <tbody id="tableBody"></tbody>
+        </table>
+
+    </div>
 
 </div>
 
-</body>
+<script>
 
+let allData = [];
+
+
+// animate numbers
+function animate(id, target){
+    let el = document.getElementById(id);
+    let current = 0;
+
+    let step = Math.ceil(target / 30);
+
+    let interval = setInterval(() => {
+        current += step;
+
+        if(current >= target){
+            current = target;
+            clearInterval(interval);
+        }
+
+        el.innerText = current;
+
+    }, 25);
+}
+
+
+// highlight search match
+function highlight(text, search){
+    if(!search) return text;
+
+    let regex = new RegExp(`(${search})`, "gi");
+    return text.replace(regex, `<span style="background:yellow">$1</span>`);
+}
+
+
+// render table
+function renderTable(data){
+    let table = document.getElementById("tableBody");
+    table.innerHTML = "";
+
+    let searchValue = document.getElementById("search").value.toLowerCase();
+
+    data.forEach(row => {
+
+        let item = highlight(row[1], searchValue);
+
+        let tr = `
+            <tr>
+                <td>${row[0]}</td>
+                <td>${item}</td>
+                <td>${row[2]}</td>
+            </tr>
+        `;
+
+        table.innerHTML += tr;
+    });
+
+    if(data.length === 0){
+        table.innerHTML = `
+            <tr>
+                <td colspan="3" style="color:#999;">No results found</td>
+            </tr>
+        `;
+    }
+}
+
+
+// load data
+function loadData(){
+
+    fetch("/inventory")
+    .then(res => res.json())
+    .then(data => {
+
+        allData = data;
+
+        animate("total", data.length);
+
+        let today = 0;
+        let todayDate = new Date().toISOString().slice(0,10);
+
+        data.forEach(item => {
+            if(item[2].startsWith(todayDate)){
+                today++;
+            }
+        });
+
+        animate("today", today);
+
+        renderTable(allData);
+
+    });
+}
+
+
+// search
+function searchData(){
+    let value = document.getElementById("search").value.toLowerCase();
+
+    let filtered = allData.filter(item =>
+        item[1].toLowerCase().includes(value)
+    );
+
+    renderTable(filtered);
+}
+
+
+// initial load
+loadData();
+
+// refresh every 15 sec
+setInterval(loadData, 15000);
+
+
+// animation
+setTimeout(() => card1.classList.add("show"), 150);
+setTimeout(() => card2.classList.add("show"), 300);
+
+</script>
+
+</body>
 </html>

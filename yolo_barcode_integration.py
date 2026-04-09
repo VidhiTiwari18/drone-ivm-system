@@ -1,55 +1,76 @@
 import cv2
 import requests
-from pyzbar.pyzbar import decode
+import time
 
-# Open camera
+# try pyzbar
+try:
+    from pyzbar.pyzbar import decode
+    use_pyzbar = True
+    print("Using pyzbar")
+except:
+    use_pyzbar = False
+    print("Using OpenCV QR")
+
 cap = cv2.VideoCapture(0)
+detector = cv2.QRCodeDetector()
 
-print("Scanner started...")
+last_data = ""
+last_time = 0
 
 while True:
-
     ret, frame = cap.read()
-
     if not ret:
         break
 
-    # Detect barcode
-    barcodes = decode(frame)
+    scanned_data = ""
 
-    for barcode in barcodes:
+    # ---------- pyzbar ----------
+    if use_pyzbar:
+        barcodes = decode(frame)
 
-        # Convert barcode bytes to string
-        barcode_data = barcode.data.decode("utf-8")
+        for barcode in barcodes:
+            scanned_data = barcode.data.decode("utf-8")
 
-        print("Scanned:", barcode_data)
+            x, y, w, h = barcode.rect
+            cv2.rectangle(frame, (x,y), (x+w,y+h), (0,255,0), 2)
 
-        # Send data to Flask backend
-        try:
-            requests.post(
-                "http://127.0.0.1:5000/add_item",
-                json={"item_id": barcode_data}
-            )
-        except:
-            print("Backend not running")
+    # ---------- OpenCV fallback ----------
+    else:
+        data, bbox, _ = detector.detectAndDecode(frame)
 
-        # Draw rectangle around barcode
-        x, y, w, h = barcode.rect
-        cv2.rectangle(frame, (x,y), (x+w,y+h), (0,255,0), 2)
+        if data:
+            scanned_data = data
 
-        cv2.putText(
-            frame,
-            barcode_data,
-            (x, y-10),
-            cv2.FONT_HERSHEY_SIMPLEX,
-            0.8,
-            (0,255,0),
-            2
-        )
+        if bbox is not None:
+            for i in range(len(bbox)):
+                pt1 = tuple(bbox[i][0].astype(int))
+                pt2 = tuple(bbox[(i+1)%len(bbox)][0].astype(int))
+                cv2.line(frame, pt1, pt2, (0,255,0), 2)
 
-    cv2.imshow("Barcode Scanner", frame)
+    # ---------- send to backend ----------
+    if scanned_data:
+        current_time = time.time()
 
-    if cv2.waitKey(1) & 0xFF == ord('q'):
+        if scanned_data != last_data or (current_time - last_time) > 3:
+            print("Scanned:", scanned_data)
+
+            try:
+                 response = requests.post(
+                    "http://127.0.0.1:5000/add_item",
+                    json={"item_id": scanned_data}
+                )
+                 print("Status:", response.status_code)
+                 print("Response:", response.text)
+
+            except Exception as e:
+                print("Error:",e)
+
+            last_data = scanned_data
+            last_time = current_time
+
+    cv2.imshow("Scanner", frame)
+
+    if cv2.waitKey(1) == ord("q"):
         break
 
 cap.release()
