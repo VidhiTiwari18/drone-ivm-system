@@ -24,7 +24,7 @@ while True:
 
     scanned_data = ""
 
-    # ---------- pyzbar ----------
+    #  pyzbar 
     if use_pyzbar:
         barcodes = decode(frame)
 
@@ -34,7 +34,7 @@ while True:
             x, y, w, h = barcode.rect
             cv2.rectangle(frame, (x,y), (x+w,y+h), (0,255,0), 2)
 
-    # ---------- OpenCV fallback ----------
+    #  OpenCV fallback
     else:
         data, bbox, _ = detector.detectAndDecode(frame)
 
@@ -47,7 +47,7 @@ while True:
                 pt2 = tuple(bbox[(i+1)%len(bbox)][0].astype(int))
                 cv2.line(frame, pt1, pt2, (0,255,0), 2)
 
-    # ---------- send to backend ----------
+    # send to backend
     if scanned_data:
         current_time = time.time()
 
