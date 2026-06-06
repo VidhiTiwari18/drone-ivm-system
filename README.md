@@ -1,5 +1,9 @@
 # AI-Based Drone Inventory Management System
 
+## Project Demonstration Video
+
+🎥 [Watch Complete Project Demo](https://www.linkedin.com/posts/vidhi-tiwari-a8b882290_machinelearning-dronetech-ai-ugcPost-7455598492288397312-kLQN/)
+
 ## Overview
 This project is an AI-based Drone Inventory Management System developed as my major project. The system combines drone technology, computer vision, and barcode scanning to automate inventory monitoring and management.
 
